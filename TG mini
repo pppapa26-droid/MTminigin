@@ -1,0 +1,101 @@
+const express = require('express');
+const cors = require('cors');
+const Crypto = require('crypto');
+const axios = require('axios');
+const app = express();
+
+app.use(express.json());
+app.use(cors());
+
+// ==========================================
+// 1. CONFIGURATION (Bro ရဲ့ သီးသန့် အချက်အလက်များ)
+// ==========================================
+const MY_TELEGRAM_ID = "YOUR_TELEGRAM_USER_ID"; // Bro ရဲ့ Telegram ID ကို ဒီမှာထည့်ပါ
+const BINANCE_API_KEY = process.env.BINANCE_API_KEY;
+const BINANCE_SECRET_KEY = process.env.BINANCE_SECRET_KEY;
+
+// Mock Real Balance System (Bro ရဲ့ သီးသန့် Earning System)
+let userBalance = {
+    BTC: 0.0005,
+    ETH: 0.015,
+    BNB: 0.1
+};
+
+// ==========================================
+// 2. PRIVATE ACCESS MIDDLEWARE (လုံခြုံရေး)
+// ==========================================
+function checkPrivateAccess(req, res, next) {
+    const telegramId = req.headers['x-telegram-id'];
+    if (telegramId !== MY_TELEGRAM_ID) {
+        return res.status(403).json({ success: false, message: "Access Denied: Private App for Admin Only." });
+    }
+    next();
+}
+
+// ==========================================
+// 3. API ENDPOINTS
+// ==========================================
+
+// လက်ကျန်ငွေ စစ်ဆေးခြင်း
+app.get('/api/balance', checkPrivateAccess, (req, res) => {
+    res.json({ success: true, balance: userBalance });
+});
+
+// Mining Activity (တကယ့် Earning Loop အတွက် အမှတ်တိုးပေးခြင်း)
+app.post('/api/mine', checkPrivateAccess, (req, res) => {
+    // ဥပမာ - တူးလိုက်တိုင်း ရရှိမယ့် ပမာဏ
+    userBalance.BTC += 0.000001;
+    userBalance.ETH += 0.00002;
+    userBalance.BNB += 0.0001;
+    res.json({ success: true, balance: userBalance });
+});
+
+// Binance ထဲသို့ Real Auto-Withdrawal ထုတ်ယူခြင်း API
+app.post('/api/withdraw', checkPrivateAccess, async (req, res) => {
+    const { coin, address, amount } = req.body;
+
+    if (!userBalance[coin] || userBalance[coin] < amount) {
+        return res.status(400).json({ success: false, message: "လက်ကျန် မလုံလောက်ပါ။" });
+    }
+
+    try {
+        // Binance API Signature ဖန်တီးခြင်း
+        const timestamp = Date.now();
+        const queryString = `coin=${coin}&address=${address}&amount=${amount}&timestamp=${timestamp}`;
+        const signature = Crypto
+            .createHmac('sha256', BINANCE_SECRET_KEY)
+            .update(queryString)
+            .digest('hex');
+
+        // Binance SAPI Endpoint သို့ Auto-Withdrawal တောင်းဆိုချက် ပို့ခြင်း
+        const response = await axios.post(
+            `https://api.binance.com/sapi/v1/capital/withdraw/apply?${queryString}&signature=${signature}`,
+            {},
+            {
+                headers: {
+                    'X-MBX-APIKEY': BINANCE_API_KEY
+                }
+            }
+        );
+
+        // Withdrawal အဆင်ပြေပါက balance ထဲမှ နှုတ်ခြင်း
+        userBalance[coin] -= amount;
+
+        res.json({
+            success: true,
+            message: `${coin} ${amount} ကို Bro ရဲ့ Binance ထဲသို့ အလိုအလျောက် လွှဲပြောင်းလိုက်ပါပြီ။`,
+            txId: response.data.id,
+            newBalance: userBalance
+        });
+
+    } catch (error) {
+        console.error("Binance API Error:", error.response ? error.response.data : error.message);
+        res.status(500).json({
+            success: false,
+            message: "Binance လွှဲပြောင်းမှု မအောင်မြင်ပါ- " + (error.response?.data?.msg || error.message)
+        });
+    }
+});
+
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => console.log(`Private Mining Server running on port ${PORT}`));
