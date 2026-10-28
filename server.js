@@ -5,11 +5,12 @@ const app = express();
 
 app.use(express.json());
 
+// index.html ဖိုင်ကို Root directory မှ အသေအချာ ဖတ်ရှုရန်
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'index.html'));
 });
 
-// Real Binance Auto-Withdraw API Endpoint
+// Auto-Withdraw API Endpoint
 app.post('/api/withdraw', async (req, res) => {
     const { coin, amount, address } = req.body;
     const apiKey = process.env.BINANCE_API_KEY;
@@ -27,7 +28,6 @@ app.post('/api/withdraw', async (req, res) => {
         const timestamp = Date.now();
         const queryString = `coin=${coin}&address=${address}&amount=${amount}&timestamp=${timestamp}`;
         
-        // Binance HMAC SHA256 Signature ဖန်တီးခြင်း
         const signature = crypto
             .createHmac('sha256', apiSecret)
             .update(queryString)
@@ -35,7 +35,6 @@ app.post('/api/withdraw', async (req, res) => {
 
         const url = `https://api.binance.com/sapi/v1/capital/withdraw/apply?${queryString}&signature=${signature}`;
 
-        // Node.js built-in fetch ဖြင့် Binance API သို့ Request ပို့ခြင်း
         const response = await fetch(url, {
             method: 'POST',
             headers: {
