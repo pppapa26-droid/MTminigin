@@ -4,10 +4,9 @@ const app = express();
 
 app.use(express.json());
 
-app.use(express.static(path.join(__dirname, 'public')));
-
+// HTML ကို Root directory မှ တိုက်ရိုက်ဖတ်ရန်
 app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'index.html'));
+    res.sendFile(path.join(__dirname, 'index.html'));
 });
 
 // Auto-Withdraw API Endpoint
@@ -31,4 +30,5 @@ app.post('/api/withdraw', async (req, res) => {
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+
 
