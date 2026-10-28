@@ -21,14 +21,24 @@
             padding: 20px;
             border-radius: 15px;
             box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-            margin-top: 30px;
+            margin-top: 20px;
         }
         h2 { color: #38bdf8; }
         .balance {
             font-size: 24px;
             font-weight: bold;
             color: #4ade80;
-            margin: 20px 0;
+            margin: 15px 0;
+        }
+        input {
+            width: 90%;
+            padding: 10px;
+            margin: 10px 0;
+            background: #0f172a;
+            border: 1px solid #334155;
+            color: white;
+            border-radius: 6px;
+            font-size: 14px;
         }
         button {
             background-color: #2563eb;
@@ -50,6 +60,9 @@
         <p>Admin Control Panel</p>
         <div class="balance" id="balance">0.00000000 BTC</div>
         <p>Status: <span style="color: #4ade80;">Mining Active</span></p>
+        
+        <input type="text" id="address" placeholder="Enter Binance Deposit Address">
+        
         <button onclick="startMining()">Start Mining</button>
         <button onclick="withdraw()" style="background-color: #16a34a;">Auto-Withdraw to Binance</button>
     </div>
@@ -65,11 +78,21 @@
         }
 
         async function withdraw() {
+            const address = document.getElementById('address').value;
+            if (!address) {
+                alert("Please enter your Binance Deposit Address first!");
+                return;
+            }
+
             try {
                 const response = await fetch('/api/withdraw', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ coin: 'BTC', amount: btc.toFixed(8) })
+                    body: JSON.stringify({ 
+                        coin: 'BTC', 
+                        amount: btc.toFixed(8),
+                        address: address 
+                    })
                 });
                 const result = await response.json();
                 alert(result.message);
@@ -85,3 +108,4 @@
     </script>
 </body>
 </html>
+
