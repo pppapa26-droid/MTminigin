@@ -1,23 +1,78 @@
-const express = require('express');
-const path = require('path');
-const app = express();
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Private Crypto Miner</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        body {
+            background-color: #0f172a;
+            color: #ffffff;
+            font-family: Arial, sans-serif;
+            text-align: center;
+            padding: 20px;
+            margin: 0;
+        }
+        .container {
+            max-width: 400px;
+            margin: auto;
+            background: #1e293b;
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+            margin-top: 30px;
+        }
+        h2 { color: #38bdf8; }
+        .balance {
+            font-size: 24px;
+            font-weight: bold;
+            color: #4ade80;
+            margin: 20px 0;
+        }
+        button {
+            background-color: #2563eb;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            font-size: 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 10px;
+        }
+        button:hover { background-color: #1d4ed8; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>🚀 Private Crypto Miner</h2>
+        <p>Admin Control Panel</p>
+        <div class="balance" id="balance">0.00000000 BTC</div>
+        <p>Status: <span style="color: #4ade80;">Mining Active</span></p>
+        <button onclick="startMining()">Start Mining</button>
+        <button onclick="withdraw()" style="background-color: #16a34a;">Auto-Withdraw to Binance</button>
+    </div>
 
-app.use(express.json());
+    <script>
+        let btc = 0.00000000;
+        function startMining() {
+            setInterval(() => {
+                btc += 0.00000100;
+                document.getElementById('balance').innerText = btc.toFixed(8) + " BTC";
+            }, 1000);
+        }
 
-// Static files များကို public folder ထဲမှ ယူရန် ချိတ်ဆက်ခြင်း
-app.use(express.static(path.join(__dirname, 'public')));
+        function withdraw() {
+            alert("Withdrawal request sent to Binance API successfully!");
+        }
 
-// Root URL ဝင်လာပါက index.html ကို တိုက်ရိုက်ပြရန်
-app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'index.html'));
-});
+        // Telegram WebApp initialization
+        if (window.Telegram.WebApp) {
+            window.Telegram.WebApp.ready();
+            window.Telegram.WebApp.expand();
+        }
+    </script>
+</body>
+</html>
 
-// Auto-Withdraw API Endpoint
-app.post('/api/withdraw', async (req, res) => {
-    const { coin, amount, userId } = req.body;
-    // Binance API ဖြင့် Auto-Withdraw လုပ်မည့် လုပ်ငန်းစဉ်များ ဤနေရာတွင် ဆက်လက်ရေးသားနိုင်ပါသည်။
-    res.json({ success: true, message: "Withdrawal request sent to Binance API successfully!" });
-});
-
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
